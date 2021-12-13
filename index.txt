@@ -1,0 +1,28 @@
+import React, { useState } from "react";
+import { create } from 'ipfs-http-client'
+
+const client = create('https://ipfs.infura.io:5001/api/v0')
+
+async function loadIpfs(file)
+{
+    const data = await client.add(file)
+    const url = `https://ipfs.infura.io/ipfs/${data.path}`
+    return url
+}
+
+const Home = () => {
+  const [file, setFile] = useState(null);
+  function handleChange(e) {
+      const file = e.target.files[0]
+    loadIpfs(file).then(url => setFile(url))
+
+  }
+  return (
+    <>
+      <input type="file" onChange={handleChange} />
+      <img src={file} width="500" height="500" />
+    </>
+  );
+};
+
+export default Home;
