@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { client } from "../API/ipfs";
 import { web3, Contract } from "../Utils/Web3";
 import {
@@ -9,39 +10,49 @@ import {
   Button,
   InputContainer,
 } from "./styles";
-
+const fs = require('fs'); 
 const App = () => {
-  const [name, setName] = useState("");
+  const [_name, setName] = useState("");
   const [price, setPrice] = useState(0);
-  const [description, setDescription] = useState("");
+  const [_description, setDescription] = useState("");
   const [check, setCheck] = useState(false);
   const [url, setURL] = useState("");
-  useEffect(async () => {
-    const Address = await web3.eth.getAccounts();
-    console.log(Address);
-   
-  }, []);
+  const [tokenURI , setTokenURI] = useState('')
+
   async function testData(file) {
-    const addedData = await client.add(file);
-    const URL = `https://ipfs.infura.io/ipfs/${addedData.path}`;
-    setURL(URL);
+   const imageFile = await client.add(file)
+   const _imageURL = `https://ipfs.infura.io/ipfs/${imageFile.path}`
+   const metadata = {
+    name : `${_name}`,
+    description : `${_description}`,
+    image : `${_imageURL}`
+   }
+   const data = await client.add(JSON.stringify(metadata))
+   setTokenURI(`https://ipfs.infura.io/ipfs/${data.path}`)   
   }
   function handleFiles(e) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setURL(e.target.result);
+    };
+    reader.readAsDataURL(e.target.files[0]);
     testData(e.target.files[0]);
   }
   async function handleSubmit() {
-    console.log(name, description, price, check);
     setName("");
     setCheck(false);
-    setDescription('')
-    setPrice(0)
-    setURL('')
+    setDescription("");
+    setPrice(0);
+    setURL("");
     const priceToWei = web3.utils.toWei(price, "ether");
     const Accounts = await web3.eth.getAccounts();
     const mint = await Contract.methods
-      .mintToken(Accounts[0], url, name, description, priceToWei, check)
-      .send({ from: Accounts[0], value : web3.utils.toWei(String(0.4) , 'ether')});
-    
+      .mintToken(Accounts[0], tokenURI, _name, _description, priceToWei, check)
+      .send({
+        from: Accounts[0],
+        value: web3.utils.toWei(String(0.4), "ether"),
+      });
+      console.log(mint)
   }
   return (
     <Container>
@@ -51,7 +62,7 @@ const App = () => {
           <Input
             type="text"
             onChange={(e) => setName(e.target.value)}
-            value={name}
+            value={_name}
           />
         </InputContainer>
 
@@ -60,7 +71,7 @@ const App = () => {
           <Input
             type="text"
             onChange={(e) => setDescription(e.target.value)}
-            value={description}
+            value={_description}
           />
         </InputContainer>
 
